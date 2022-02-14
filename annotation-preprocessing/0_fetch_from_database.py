@@ -84,6 +84,6 @@ if __name__ == "__main__":
             'uuid', 'study_id', 'pos_z', 'focus_value', 'add_date']
 
     print("Writing objects to file...")
-    df_objects.to_csv("objects.csv")
+    df_objects.to_csv("out/objects.csv")
     print("Writing stacks to file...")
-    df_stacks.to_csv("stacks.csv")
+    df_stacks.to_csv("out/stacks.csv")

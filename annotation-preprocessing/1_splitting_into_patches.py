@@ -35,7 +35,7 @@ def get_neighbours(img, x, y, dimensions):
             neighbours.append(None)
     return neighbours
 
-def extract_object_tiles(obj, stack_images):
+def extract_object_tiles(obj, stack_images, in_folder):
     x_start = int(obj.x_min / size) * size
     x_end = int(math.ceil(obj.x_max / size)) * size
     y_start = int(obj.y_min / size) * size
@@ -43,7 +43,7 @@ def extract_object_tiles(obj, stack_images):
 
     tiles = []
 
-    focus_stack_images = list(map(lambda x: (x, Image.open(x.file_path)), stack_images))
+    focus_stack_images = list(map(lambda x: (x, Image.open(os.path.join(in_folder, x.file_path))), stack_images))
 
     # Get tiles of the image that contain bounding box of object
     for y in range(y_start, y_end, size):
@@ -72,8 +72,8 @@ def save_tile(original_file_path, out_dir, x : int, y : int, img, overwrite = Fa
         img.save(save_to)
     return save_to
 
-def save_obj_tiles(obj, out_folder, stack_images):
-    extracted = extract_object_tiles(obj, stack_images)
+def save_obj_tiles(obj, out_folder, in_folder, stack_images):
+    extracted = extract_object_tiles(obj, stack_images, in_folder)
     z_stacks = []
     for z_stack in extracted:
         z_stack_images = []
@@ -106,10 +106,10 @@ def save_obj_tiles(obj, out_folder, stack_images):
 
     return z_stacks
 
-def save_stack(stack, out_folder):
+def save_stack(stack, out_folder, in_folder):
     z_stacks = []
     for obj in stack.objects:
-        z_stacks.extend(save_obj_tiles(obj, out_folder, stack.images))
+        z_stacks.extend(save_obj_tiles(obj, out_folder, in_folder, stack.images))
     return z_stacks
 
 
@@ -117,10 +117,14 @@ if __name__ == "__main__":
     load_dotenv()
     print("Geting environment variables...")
     size = int(os.getenv('IMG_SIZE'))
+    root_in = os.getenv('ROOT_IN')
+
+    print(f'img_size: ')
+    print(f'in_folder: {root_in}')
 
     print("Loading data from csv files...")
-    objects = pd.read_csv("test_objects.csv", index_col=0)
-    stacks = pd.read_csv("test_stacks.csv", index_col=0)
+    objects = pd.read_csv("out/test_objects.csv", index_col=0)
+    stacks = pd.read_csv("out/test_stacks.csv", index_col=0)
 
 
     stacks_dict = defaultdict(lambda: StackEntry())
@@ -142,7 +146,7 @@ if __name__ == "__main__":
 
     print("Generating image tiles and writing them to file...")
     for stack in stacks_dict.values():
-        z_stacks.extend(save_stack(stack,""))
+        z_stacks.extend(save_stack(stack,"out", root_in))
 
     # randomize z_stacks
     print("Shuffling data...")
