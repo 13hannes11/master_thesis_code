@@ -42,7 +42,7 @@ def fetch_focus_stacks_from_database(db):
             Image.add_date
         FROM FocusStack
         JOIN Scan on Scan.id = FocusStack.scan_id
-        JOIN Slide on Slide.id = Scan.id 
+        JOIN Slide on Slide.id = Scan.slide_id 
         JOIN Study on Study .id = Slide.study_id 
         JOIN Image on Image.focus_stack_id  = FocusStack.id
         WHERE 
