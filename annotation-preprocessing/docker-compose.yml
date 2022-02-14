@@ -1,0 +1,10 @@
+version: "3"  # optional since v1.27.0
+services:
+  preprocess:
+    build: .
+    volumes:
+      - ./out/:/usr/src/app/out:z
+      - ./in/:/usr/src/app/in:z
+    env_file:
+      - .env
+
