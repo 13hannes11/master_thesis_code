@@ -1,0 +1,6 @@
+*.env
+out
+in
+*.csv
+*.jpg
+*.sql
