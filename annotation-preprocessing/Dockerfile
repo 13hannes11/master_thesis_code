@@ -8,6 +8,6 @@ RUN apt-get install libgl1 -y
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY *.py .
+COPY *.py ./
 
 CMD sh -c "python 0_fetch_from_database.py && python 1_splitting_into_patches.py"
