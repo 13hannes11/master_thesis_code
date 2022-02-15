@@ -7,4 +7,4 @@ services:
       - ./in/:/usr/src/app/in:z
     env_file:
       - .env
-
+    network_mode: host # use host networking; you can also just link container networks directly
