@@ -48,15 +48,16 @@ def extract_object_tiles(obj, stack_images, in_folder, threshold = 0.25):
     # Get tiles of the image that contain bounding box of object
     for y in range(y_start, y_end, size):
         for x in range(x_start, x_end, size):
-            stack = []
-            if compute_overlap([x, y, x + size, y + size], [obj.x_min, obj.y_min, obj.x_max, obj.y_max]) > size * size * threshold:
-            for row, img in focus_stack_images:
-                box = [x, y, x + size, y + size]
-                crop = img.crop(box)
             
-                neighbours = get_neighbours(img, x, y, size)
-                stack.append((row, box[:2], crop, neighbours))
-            tiles.append(stack)
+            if compute_overlap([x, y, x + size, y + size], [obj.x_min, obj.y_min, obj.x_max, obj.y_max]) > size * size * threshold:
+                stack = []
+                for row, img in focus_stack_images:
+                    box = [x, y, x + size, y + size]
+                    crop = img.crop(box)
+                
+                    neighbours = get_neighbours(img, x, y, size)
+                    stack.append((row, box[:2], crop, neighbours))
+                tiles.append(stack)
     return tiles
 
 
@@ -64,11 +65,10 @@ def save_tile(original_file_path, out_dir, x : int, y : int, img, overwrite = Fa
     path, file_name = os.path.split(original_file_path)
     name, ext = os.path.splitext(file_name)
 
-    out_path = os.path.join(out_dir, path)
-    save_to = os.path.join(out_path, f'{name}_{x}_{y}{ext}')
+    save_to = os.path.join(path, f'{name}_{x}_{y}{ext}')
 
-    if not os.path.exists(out_path):
-        os.makedirs(out_path)
+    if not os.path.exists(path):
+        os.makedirs(path)
     if overwrite or not os.path.exists(save_to):
         img.save(save_to)
     return save_to
