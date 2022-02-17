@@ -65,13 +65,14 @@ def save_tile(original_file_path, out_dir, x : int, y : int, img, overwrite = Fa
     path, file_name = os.path.split(original_file_path)
     name, ext = os.path.splitext(file_name)
 
-    save_to = os.path.join(path, f'{name}_{x}_{y}{ext}')
+    out_path = os.path.join(out_dir, path)
+    save_to = os.path.join(out_path, f'{name}_{x}_{y}{ext}')
 
-    if not os.path.exists(path):
-        os.makedirs(path)
+    if not os.path.exists(out_path):
+        os.makedirs(out_path)
     if overwrite or not os.path.exists(save_to):
         img.save(save_to)
-    return save_to
+    return os.path.join(path, f'{name}_{x}_{y}{ext}')
 
 def compute_overlap(rect1, rect2):
     dx = min(rect1[2], rect2[2]) - max(rect1[0], rect2[0])
