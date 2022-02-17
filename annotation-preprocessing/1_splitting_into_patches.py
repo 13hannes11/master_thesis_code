@@ -35,7 +35,7 @@ def get_neighbours(img, x, y, dimensions):
             neighbours.append(None)
     return neighbours
 
-def extract_object_tiles(obj, stack_images, in_folder):
+def extract_object_tiles(obj, stack_images, in_folder, threshold = 0.25):
     x_start = int(obj.x_min / size) * size
     x_end = int(math.ceil(obj.x_max / size)) * size
     y_start = int(obj.y_min / size) * size
@@ -49,6 +49,7 @@ def extract_object_tiles(obj, stack_images, in_folder):
     for y in range(y_start, y_end, size):
         for x in range(x_start, x_end, size):
             stack = []
+            if compute_overlap([x, y, x + size, y + size], [obj.x_min, obj.y_min, obj.x_max, obj.y_max]) > size * size * threshold:
             for row, img in focus_stack_images:
                 box = [x, y, x + size, y + size]
                 crop = img.crop(box)
@@ -71,6 +72,15 @@ def save_tile(original_file_path, out_dir, x : int, y : int, img, overwrite = Fa
     if overwrite or not os.path.exists(save_to):
         img.save(save_to)
     return save_to
+
+def compute_overlap(rect1, rect2):
+    dx = min(rect1[2], rect2[2]) - max(rect1[0], rect2[0])
+    dy = min(rect1[3], rect2[3]) - max(rect1[1], rect2[1])
+    print(rect1)
+    print(rect2)
+    print(dx)
+    print(dy)
+    return dx * dy
 
 def save_obj_tiles(obj, out_folder, in_folder, stack_images):
     extracted = extract_object_tiles(obj, stack_images, in_folder)
