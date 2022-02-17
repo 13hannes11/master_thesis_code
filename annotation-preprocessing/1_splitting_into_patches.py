@@ -76,10 +76,6 @@ def save_tile(original_file_path, out_dir, x : int, y : int, img, overwrite = Fa
 def compute_overlap(rect1, rect2):
     dx = min(rect1[2], rect2[2]) - max(rect1[0], rect2[0])
     dy = min(rect1[3], rect2[3]) - max(rect1[1], rect2[1])
-    print(rect1)
-    print(rect2)
-    print(dx)
-    print(dy)
     return dx * dy
 
 def save_obj_tiles(obj, out_folder, in_folder, stack_images):
