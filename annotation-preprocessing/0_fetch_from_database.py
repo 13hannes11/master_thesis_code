@@ -3,6 +3,19 @@ import pandas as pd
 import os
 from dotenv import load_dotenv
 
+BASE_OBJECT_SQL = """
+FROM UniqueGroundTruth 
+        JOIN DetectedObject on DetectedObject.id = UniqueGroundTruth.object_id
+        JOIN Image on Image.id = DetectedObject.image_id  
+        JOIN FocusStack on FocusStack.id = Image.focus_stack_id
+        JOIN Scan on Scan.id = FocusStack.scan_id
+        JOIN Slide on Slide.id = Scan.slide_id 
+        JOIN ObjectType on ObjectType.id = UniqueGroundTruth.object_type_id 
+        WHERE metaclass_id = 1 -- only select eggs;
+            AND study_id = 31
+        ORDER BY UniqueGroundTruth.focus_stack_id
+"""
+
 def fetch_objects_from_datase(db):
     cursor = db.cursor()
 
@@ -14,16 +27,7 @@ def fetch_objects_from_datase(db):
             UniqueGroundTruth.y_max,
             UniqueGroundTruth.object_type_id,
             ObjectType.name,
-            Image.add_date
-        FROM UniqueGroundTruth 
-        JOIN DetectedObject on DetectedObject.id = UniqueGroundTruth.object_id
-        JOIN Image on Image.id = DetectedObject.image_id  
-        JOIN FocusStack on FocusStack.id = Image.focus_stack_id
-        JOIN ObjectType on ObjectType.id = UniqueGroundTruth.object_type_id 
-        WHERE metaclass_id = 1 -- only select eggs;
-            AND unix_timestamp(Image.add_date) > unix_timestamp('2021-03-07 00:00:00')
-        ORDER BY UniqueGroundTruth.focus_stack_id;
-        """)
+            Image.add_date""" + BASE_OBJECT_SQL)
 
     result = cursor.fetchall()
     return result
@@ -49,13 +53,8 @@ def fetch_focus_stacks_from_database(db):
             FocusStack.id IN( -- get all focus stacks that have objects in them;
                 SELECT DISTINCT
                     UniqueGroundTruth.focus_stack_id
-                FROM UniqueGroundTruth 
-                JOIN DetectedObject on DetectedObject.id = UniqueGroundTruth.object_id
-                JOIN Image on Image.id = DetectedObject.image_id  
-                JOIN FocusStack on FocusStack.id = Image.focus_stack_id
-                JOIN ObjectType on ObjectType.id = UniqueGroundTruth.object_type_id 
-                WHERE metaclass_id = 1 -- only select eggs;
-                    AND unix_timestamp(Image.add_date) > unix_timestamp('2021-03-07 00:00:00')
+                """ + BASE_OBJECT_SQL
+        + """
             )
         ORDER BY FocusStack.id DESC, focus_value, focus_level
         """)
