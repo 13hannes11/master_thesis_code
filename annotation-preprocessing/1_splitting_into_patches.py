@@ -97,18 +97,18 @@ def save_obj_tiles(obj, out_folder, in_folder, stack_images):
                 neighbours.append(n_path)
 
             z_stack_images.append({
-                "focus_value": row.focus_value,
+                "focus_value": row["focus_value"],
                 "image_path": image_path,
                 "neighbours": neighbours,
-                "original_filename": row.file_name,
-                "scan_uuid": row.uuid,
-                "study_id": row.study_id,
+                "original_filename": row["file_name"],
+                "scan_uuid": row["uuid"],
+                "study_id": row["study_id"],
             })
         z_stacks.append({ 
             "best_index": None,
             "images" : z_stack_images,
-            "obj_name": obj.name,
-            "stack_id": obj.stack_id,
+            "obj_name": obj["name"],
+            "stack_id": obj["stack_id"],
         })
 
     return z_stacks
