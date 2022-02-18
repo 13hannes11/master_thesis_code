@@ -1,0 +1,12 @@
+version: "3"  # optional since v1.27.0
+services:
+  model:
+    build: .
+    ports:
+      - 6006:6006
+    volumes:
+       - ./saved:/usr/src/app/saved:z
+    #  - ./out/:/usr/src/app/out:z
+    #  - ./in/:/usr/src/app/in:z
+    #env_file:
+    #  - .env
