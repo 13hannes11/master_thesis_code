@@ -4,6 +4,9 @@ torchvision>=0.11.0
 pytorch-lightning>=1.5.10
 torchmetrics>=0.7.0
 
+# --------- data and model dependencies --------- #
+scikit-image
+
 # --------- hydra --------- #
 hydra-core>=1.1.0
 hydra-colorlog>=1.1.0
