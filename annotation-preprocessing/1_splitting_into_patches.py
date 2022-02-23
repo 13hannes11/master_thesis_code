@@ -130,8 +130,8 @@ if __name__ == "__main__":
     print(f'in_folder: {root_in}')
 
     print("Loading data from csv files...")
-    objects = pd.read_csv("out/test_objects.csv", index_col=0)
-    stacks = pd.read_csv("out/test_stacks.csv", index_col=0)
+    objects = pd.read_csv("out/objects.csv", index_col=0)
+    stacks = pd.read_csv("out/stacks.csv", index_col=0)
 
 
     stacks_dict = defaultdict(lambda: StackEntry())
