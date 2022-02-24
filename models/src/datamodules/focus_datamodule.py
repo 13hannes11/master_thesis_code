@@ -1,14 +1,11 @@
 import os
-from typing import Any, Optional, Tuple, Union
-from typing_extensions import Self
-import numpy as np
+from typing import Optional, Tuple
 import pandas as pd
 from skimage import io
 
 import torch
 from pytorch_lightning import LightningDataModule
-from torch.utils.data import ConcatDataset, DataLoader, Dataset, random_split
-from torchvision.datasets import MNIST
+from torch.utils.data import DataLoader, Dataset, random_split
 from torchvision.transforms import transforms
 
 
@@ -58,3 +55,88 @@ class FocusDataSet(Dataset):
 
         return sample
 
+
+class FocusDataModule(LightningDataModule):
+    """
+    LightningDataModule for FocusStack dataset.
+    """
+
+    def __init__(
+        self,
+        data_dir: str = "data/",
+        csv_file: str = "data/metadata.csv",
+        train_val_test_split_percentage: Tuple[int, int, int] = (0.75, 0.15, 0.15),
+        batch_size: int = 64,
+        num_workers: int = 0,
+        pin_memory: bool = False,
+    ):
+        super().__init__()
+
+        # this line allows to access init params with 'self.hparams' attribute
+        self.save_hyperparameters(logger=False)
+
+        # data transformations
+        self.transforms = transforms.Compose([])
+
+        self.data_train: Optional[Dataset] = None
+        self.data_val: Optional[Dataset] = None
+        self.data_test: Optional[Dataset] = None
+
+    def prepare_data(self):
+        """This method is not implemented as of yet.
+
+        Download data if needed. This method is called only from a single GPU.
+        Do not use it to assign state (self.x = y).
+        """
+        pass
+
+    def setup(self, stage: Optional[str] = None):
+        """Load data. Set variables: `self.data_train`, `self.data_val`, `self.data_test`.
+        This method is called by lightning twice for `trainer.fit()` and `trainer.test()`, so be careful if you do a random split!
+        The `stage` can be used to differentiate whether it's called before trainer.fit()` or `trainer.test()`."""
+
+        # load datasets only if they're not loaded already
+        if not self.data_train and not self.data_val and not self.data_test:
+            dataset = FocusDataSet(
+                self.hparams.csv_file, self.hparams.data_dir, transform=self.transforms
+            )
+            train_length = int(
+                len(dataset) * self.hparams.train_val_test_split_percentage[0]
+            )
+            val_length = int(
+                len(dataset) * self.hparams.train_val_test_split_percentage[1]
+            )
+            test_length = len(dataset) - val_length - train_length
+
+            self.data_train, self.data_val, self.data_test = random_split(
+                dataset=dataset,
+                lengths=(train_length, test_length, val_length),
+                generator=torch.Generator().manual_seed(42),
+            )
+
+    def train_dataloader(self):
+        return DataLoader(
+            dataset=self.data_train,
+            batch_size=self.hparams.batch_size,
+            num_workers=self.hparams.num_workers,
+            pin_memory=self.hparams.pin_memory,
+            shuffle=True,
+        )
+
+    def val_dataloader(self):
+        return DataLoader(
+            dataset=self.data_val,
+            batch_size=self.hparams.batch_size,
+            num_workers=self.hparams.num_workers,
+            pin_memory=self.hparams.pin_memory,
+            shuffle=False,
+        )
+
+    def test_dataloader(self):
+        return DataLoader(
+            dataset=self.data_test,
+            batch_size=self.hparams.batch_size,
+            num_workers=self.hparams.num_workers,
+            pin_memory=self.hparams.pin_memory,
+            shuffle=False,
+        )
