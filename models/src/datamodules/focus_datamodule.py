@@ -51,7 +51,7 @@ class FocusDataSet(Dataset):
         sample = {"image": image, "focus_value": focus_value}
 
         if self.transform:
-            sample = self.transform(sample)
+            sample["image"] = self.transform(sample["image"])
 
         return sample
 
@@ -76,7 +76,9 @@ class FocusDataModule(LightningDataModule):
         self.save_hyperparameters(logger=False)
 
         # data transformations
-        self.transforms = transforms.Compose([])
+        self.transforms = transforms.Compose(
+            [transforms.ToTensor(), transforms.ConvertImageDtype(torch.float)]
+        )
 
         self.data_train: Optional[Dataset] = None
         self.data_val: Optional[Dataset] = None
