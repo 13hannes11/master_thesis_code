@@ -3,8 +3,8 @@
 # specify here default evaluation configuration
 defaults:
   - _self_
-  - datamodule: mnist.yaml # choose the datamodule for evaluation
-  - model: mnist.yaml
+  - datamodule: foucs.yaml # choose the datamodule for evaluation
+  - model: focus.yaml
   - callbacks: null
   - logger: null
   - trainer: default.yaml
