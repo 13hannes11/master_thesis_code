@@ -71,12 +71,12 @@ class FocusLitModule(LightningModule):
 
         # use separate metric instance for train, val and test step
         # to ensure a proper reduction over the epoch
-        self.train_acc = MeanAbsoluteError()
-        self.val_acc = MeanAbsoluteError()
-        self.test_acc = MeanAbsoluteError()
+        self.train_mae = MeanAbsoluteError()
+        self.val_mae = MeanAbsoluteError()
+        self.test_mae = MeanAbsoluteError()
 
         # for logging best so far validation accuracy
-        self.val_acc_best = MinMetric()
+        self.val_mae_best = MinMetric()
 
     def forward(self, x: torch.Tensor):
         return self.model(x)
@@ -93,9 +93,9 @@ class FocusLitModule(LightningModule):
         loss, preds, targets = self.step(batch)
 
         # log train metrics
-        acc = self.train_acc(preds, targets)
+        mae = self.train_mae(preds, targets)
         self.log("train/loss", loss, on_step=False, on_epoch=True, prog_bar=False)
-        self.log("train/acc", acc, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("train/mae", mae, on_step=False, on_epoch=True, prog_bar=True)
 
         # we can return here dict with any tensors
         # and then read it in some callback or in `training_epoch_end()`` below
@@ -110,26 +110,26 @@ class FocusLitModule(LightningModule):
         loss, preds, targets = self.step(batch)
 
         # log val metrics
-        acc = self.val_acc(preds, targets)
+        mae = self.val_mae(preds, targets)
         self.log("val/loss", loss, on_step=False, on_epoch=True, prog_bar=False)
-        self.log("val/acc", acc, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("val/mae", mae, on_step=False, on_epoch=True, prog_bar=True)
 
         return {"loss": loss, "preds": preds, "targets": targets}
 
     def validation_epoch_end(self, outputs: List[Any]):
-        acc = self.val_acc.compute()  # get val accuracy from current epoch
-        self.val_acc_best.update(acc)
+        mae = self.val_mae.compute()  # get val accuracy from current epoch
+        self.val_mae_best.update(mae)
         self.log(
-            "val/acc_best", self.val_acc_best.compute(), on_epoch=True, prog_bar=True
+            "val/mae_best", self.val_mae_best.compute(), on_epoch=True, prog_bar=True
         )
 
     def test_step(self, batch: Any, batch_idx: int):
         loss, preds, targets = self.step(batch)
 
         # log test metrics
-        acc = self.test_acc(preds, targets)
+        mae = self.test_mae(preds, targets)
         self.log("test/loss", loss, on_step=False, on_epoch=True)
-        self.log("test/acc", acc, on_step=False, on_epoch=True)
+        self.log("test/mae", mae, on_step=False, on_epoch=True)
 
         return {"loss": loss, "preds": preds, "targets": targets}
 
@@ -138,9 +138,9 @@ class FocusLitModule(LightningModule):
 
     def on_epoch_end(self):
         # reset metrics at the end of every epoch
-        self.train_acc.reset()
-        self.test_acc.reset()
-        self.val_acc.reset()
+        self.train_mae.reset()
+        self.test_mae.reset()
+        self.val_mae.reset()
 
     def configure_optimizers(self):
         """Choose what optimizers and learning-rate schedulers.
