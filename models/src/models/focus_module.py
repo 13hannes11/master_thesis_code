@@ -86,7 +86,7 @@ class FocusLitModule(LightningModule):
         y = batch["focus_value"]
         logits = self.forward(x)
         loss = self.criterion(logits, y)
-        preds = torch.argmax(logits, dim=1)
+        preds = torch.squeeze(logits)
         return loss, preds, y
 
     def training_step(self, batch: Any, batch_idx: int):
