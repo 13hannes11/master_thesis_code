@@ -1,3 +1,6 @@
 [submodule "focus_annotator"]
 	path = focus_annotator
 	url = git@github.com:13hannes11/focus_annotator.git
+[submodule "master_thesis_models"]
+	path = models
+	url = https://huggingface.co/13hannes11/master_thesis_models
