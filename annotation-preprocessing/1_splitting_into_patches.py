@@ -7,19 +7,33 @@ import math
 import json
 import random
 
+
 class StackEntry:
     def __init__(self):
         self.images = []
         self.objects = []
+
     def add_image(self, image):
         self.images.append(image)
+
     def add_object(self, object):
         self.objects.append(object)
+
     def sort(self):
-        self.images.sort(key=lambda x: x.focus_value)
+        self.images.sort(key=lambda x: x.focus_height)
+
 
 def get_neighbours(img, x, y, dimensions):
-    neighbour_candidates = [(-1,-1), (0, -1), (1, -1), (-1, 0), (1,0), (-1,1), (0,1), (1,1)]
+    neighbour_candidates = [
+        (-1, -1),
+        (0, -1),
+        (1, -1),
+        (-1, 0),
+        (1, 0),
+        (-1, 1),
+        (0, 1),
+        (1, 1),
+    ]
 
     width, height = img.size
 
@@ -28,14 +42,25 @@ def get_neighbours(img, x, y, dimensions):
         neighbour_x = x + x_offset * dimensions
         neighbour_y = y + y_offset * dimensions
 
-        if neighbour_x >= 0 and neighbour_x + dimensions <= width and      neighbour_y >= 0 and neighbour_y + dimensions <= height:
-            box = [neighbour_x, neighbour_y, neighbour_x + dimensions, neighbour_y + dimensions]
+        if (
+            neighbour_x >= 0
+            and neighbour_x + dimensions <= width
+            and neighbour_y >= 0
+            and neighbour_y + dimensions <= height
+        ):
+            box = [
+                neighbour_x,
+                neighbour_y,
+                neighbour_x + dimensions,
+                neighbour_y + dimensions,
+            ]
             neighbours.append((neighbour_x, neighbour_y, img.crop(box)))
         else:
             neighbours.append(None)
     return neighbours
 
-def extract_object_tiles(obj, stack_images, in_folder, threshold = 0.25):
+
+def extract_object_tiles(obj, stack_images, in_folder, threshold=0.25):
     x_start = int(obj.x_min / size) * size
     x_end = int(math.ceil(obj.x_max / size)) * size
     y_start = int(obj.y_min / size) * size
@@ -43,41 +68,61 @@ def extract_object_tiles(obj, stack_images, in_folder, threshold = 0.25):
 
     tiles = []
 
-    focus_stack_images = list(map(lambda x: (x, Image.open(os.path.join(in_folder, x.file_path))), stack_images))
+    focus_stack_images = list(
+        map(
+            lambda x: (x, Image.open(os.path.join(in_folder, x.file_path))),
+            stack_images,
+        )
+    )
 
     # Get tiles of the image that contain bounding box of object
     for y in range(y_start, y_end, size):
         for x in range(x_start, x_end, size):
-            
-            if compute_overlap([x, y, x + size, y + size], [obj.x_min, obj.y_min, obj.x_max, obj.y_max]) > size * size * threshold:
+
+            if (  # only take images with sufficently overlap percentge
+                compute_overlap(
+                    [x, y, x + size, y + size],
+                    [obj.x_min, obj.y_min, obj.x_max, obj.y_max],
+                )
+                > size * size * threshold
+            ):
                 stack = []
                 for row, img in focus_stack_images:
-                    box = [x, y, x + size, y + size]
-                    crop = img.crop(box)
-                
-                    neighbours = get_neighbours(img, x, y, size)
-                    stack.append((row, box[:2], crop, neighbours))
-                tiles.append(stack)
+                    width, height = img.size
+
+                    if (
+                        x >= 0 and x + size <= width and y >= 0 and y + size <= height
+                    ):  # check if tile is not going over bounds
+
+                        box = [x, y, x + size, y + size]
+                        crop = img.crop(box)
+
+                        neighbours = get_neighbours(img, x, y, size)
+                        stack.append((row, box[:2], crop, neighbours))
+                if len(stack) != 0:
+                    tiles.append(stack)
     return tiles
 
 
-def save_tile(original_file_path, out_dir, x : int, y : int, img, overwrite = False):
+def save_tile(original_file_path, out_dir, x: int, y: int, img, overwrite=False):
     path, file_name = os.path.split(original_file_path)
     name, ext = os.path.splitext(file_name)
 
     out_path = os.path.join(out_dir, path)
-    save_to = os.path.join(out_path, f'{name}_{x}_{y}{ext}')
+    save_to = os.path.join(out_path, f"{name}_{x}_{y}{ext}")
 
     if not os.path.exists(out_path):
         os.makedirs(out_path)
     if overwrite or not os.path.exists(save_to):
         img.save(save_to)
-    return os.path.join(path, f'{name}_{x}_{y}{ext}')
+    return os.path.join(path, f"{name}_{x}_{y}{ext}")
+
 
 def compute_overlap(rect1, rect2):
     dx = min(rect1[2], rect2[2]) - max(rect1[0], rect2[0])
     dy = min(rect1[3], rect2[3]) - max(rect1[1], rect2[1])
     return dx * dy
+
 
 def save_obj_tiles(obj, out_folder, in_folder, stack_images):
     extracted = extract_object_tiles(obj, stack_images, in_folder)
@@ -96,22 +141,27 @@ def save_obj_tiles(obj, out_folder, in_folder, stack_images):
                     n_path = save_tile(row.file_path, out_folder, x, y, n_img)
                 neighbours.append(n_path)
 
-            z_stack_images.append({
-                "focus_value": row["focus_value"],
-                "image_path": image_path,
-                "neighbours": neighbours,
-                "original_filename": row["file_name"],
-                "scan_uuid": row["uuid"],
-                "study_id": row["study_id"],
-            })
-        z_stacks.append({ 
-            "best_index": None,
-            "images" : z_stack_images,
-            "obj_name": obj["name"],
-            "stack_id": obj["stack_id"],
-        })
+            z_stack_images.append(
+                {
+                    "focus_height": row["focus_height"],
+                    "image_path": image_path,
+                    "neighbours": neighbours,
+                    "original_filename": row["file_name"],
+                    "scan_uuid": row["uuid"],
+                    "study_id": row["study_id"],
+                }
+            )
+        z_stacks.append(
+            {
+                "best_index": None,
+                "images": z_stack_images,
+                "obj_name": obj["name"],
+                "stack_id": obj["stack_id"],
+            }
+        )
 
     return z_stacks
+
 
 def save_stack(stack, out_folder, in_folder):
     z_stacks = []
@@ -123,19 +173,18 @@ def save_stack(stack, out_folder, in_folder):
 if __name__ == "__main__":
     load_dotenv()
     print("Geting environment variables...")
-    size = int(os.getenv('IMG_SIZE'))
-    root_in = os.getenv('ROOT_IN')
+    size = int(os.getenv("IMG_SIZE"))
+    root_in = os.getenv("ROOT_IN")
 
-    print(f'img_size: ')
-    print(f'in_folder: {root_in}')
+    print(f"img_size: ")
+    print(f"in_folder: {root_in}")
 
     print("Loading data from csv files...")
     objects = pd.read_csv("out/objects.csv", index_col=0)
     stacks = pd.read_csv("out/stacks.csv", index_col=0)
 
-
     stacks_dict = defaultdict(lambda: StackEntry())
-    
+
     print("Building internal datastructure...")
     # adding images to dict
     for (index, row) in stacks.iterrows():
@@ -153,13 +202,12 @@ if __name__ == "__main__":
 
     print("Generating image tiles and writing them to file...")
     for stack in stacks_dict.values():
-        z_stacks.extend(save_stack(stack,"out", root_in))
+        z_stacks.extend(save_stack(stack, "out", root_in))
 
     # randomize z_stacks
     print("Shuffling data...")
     random.shuffle(z_stacks)
 
     print("Writing meta-data for annotation to file...")
-    with open(os.path.join(out_folder, "data.json"), 'w') as file:
+    with open(os.path.join(out_folder, "data.json"), "w") as file:
         file.write(json.dumps(z_stacks))
- 
