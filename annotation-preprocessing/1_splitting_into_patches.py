@@ -180,8 +180,8 @@ if __name__ == "__main__":
     print(f"in_folder: {root_in}")
 
     print("Loading data from csv files...")
-    objects = pd.read_csv("out/objects.csv", index_col=0)
-    stacks = pd.read_csv("out/stacks.csv", index_col=0)
+    objects = pd.read_csv(os.path.join("out", os.getenv("OBJECTS_CSV")), index_col=0)
+    stacks = pd.read_csv(os.path.join("out", os.getenv("STACKS_CSV")), index_col=0)
 
     stacks_dict = defaultdict(lambda: StackEntry())
 
@@ -209,5 +209,5 @@ if __name__ == "__main__":
     random.shuffle(z_stacks)
 
     print("Writing meta-data for annotation to file...")
-    with open(os.path.join(out_folder, "data.json"), "w") as file:
+    with open(os.path.join(out_folder, os.getenv("DATA_JSON")), "w") as file:
         file.write(json.dumps(z_stacks))

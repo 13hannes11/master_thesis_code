@@ -1,3 +1,4 @@
+from ast import Str
 import mysql.connector
 import pandas as pd
 import os
@@ -17,7 +18,37 @@ FROM UniqueGroundTruth
 """
 
 
-def fetch_objects_from_datase(db):
+def get_base_object_sql(object_name):
+    if not object_name:
+        return """
+            FROM UniqueGroundTruth 
+                    JOIN DetectedObject on DetectedObject.id = UniqueGroundTruth.object_id
+                    JOIN Image on Image.id = DetectedObject.image_id  
+                    JOIN FocusStack on FocusStack.id = Image.focus_stack_id
+                    JOIN Scan on Scan.id = FocusStack.scan_id
+                    JOIN Slide on Slide.id = Scan.slide_id 
+                    JOIN ObjectType on ObjectType.id = UniqueGroundTruth.object_type_id 
+                    WHERE metaclass_id = 1 -- only select eggs;
+                        AND study_id = 31
+                    ORDER BY UniqueGroundTruth.focus_stack_id
+        """
+    else:
+        return f"""
+            FROM UniqueGroundTruth 
+                    JOIN DetectedObject on DetectedObject.id = UniqueGroundTruth.object_id
+                    JOIN Image on Image.id = DetectedObject.image_id  
+                    JOIN FocusStack on FocusStack.id = Image.focus_stack_id
+                    JOIN Scan on Scan.id = FocusStack.scan_id
+                    JOIN Slide on Slide.id = Scan.slide_id 
+                    JOIN ObjectType on ObjectType.id = UniqueGroundTruth.object_type_id 
+                    WHERE metaclass_id = 1 -- only select eggs;
+                        AND study_id = 31
+                        AND ObjectType.name = "{object_name}"
+                    ORDER BY UniqueGroundTruth.focus_stack_id
+        """
+
+
+def fetch_objects_from_datase(db, object_name):
     cursor = db.cursor()
 
     cursor.execute(
@@ -30,14 +61,14 @@ def fetch_objects_from_datase(db):
             UniqueGroundTruth.object_type_id,
             ObjectType.name,
             Image.add_date"""
-        + BASE_OBJECT_SQL
+        + get_base_object_sql(object_name)
     )
 
     result = cursor.fetchall()
     return result
 
 
-def fetch_focus_stacks_from_database(db):
+def fetch_focus_stacks_from_database(db, object_name):
     cursor = db.cursor()
 
     cursor.execute(
@@ -60,7 +91,7 @@ def fetch_focus_stacks_from_database(db):
                 SELECT DISTINCT
                     UniqueGroundTruth.focus_stack_id
                 """
-        + BASE_OBJECT_SQL
+        + get_base_object_sql(object_name)
         + """
             )
         ORDER BY FocusStack.id DESC, focus_height
@@ -81,9 +112,11 @@ if __name__ == "__main__":
     )
 
     print("Querring objects...")
-    df_objects = pd.DataFrame(fetch_objects_from_datase(db))
+    df_objects = pd.DataFrame(fetch_objects_from_datase(db, os.getenv("OBJECT_TYPE")))
     print("Querring stacks...")
-    df_stacks = pd.DataFrame(fetch_focus_stacks_from_database(db))
+    df_stacks = pd.DataFrame(
+        fetch_focus_stacks_from_database(db, os.getenv("OBJECT_TYPE"))
+    )
 
     df_objects.columns = [
         "stack_id",
@@ -107,6 +140,6 @@ if __name__ == "__main__":
     ]
 
     print("Writing objects to file...")
-    df_objects.to_csv("out/objects.csv")
+    df_objects.to_csv(os.path.join("out", os.getenv("OBJECTS_CSV")))
     print("Writing stacks to file...")
-    df_stacks.to_csv("out/stacks.csv")
+    df_stacks.to_csv(os.path.join("out", os.getenv("STACKS_CSV")))
