@@ -5,6 +5,12 @@ This repository contains all code produced to write my master's thesis available
 
 The model code which is integrated as a git submodule is hosted on [HuggingFace](https://huggingface.co/13hannes11/master_thesis_models).
 
+To fully initialize all submodules run the following after cloning:
+
+```bash
+git submodule update --init --recursive
+```
+
 The machine learning pipeline works as follows:
 
 1. Using the code in `annotation-preprocessing` metadata and images are extracted from a database. The data is prepared to be usable by the tool Focus Annotator.
